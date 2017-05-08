@@ -7,7 +7,10 @@
 
 /* Returns the source directory of windows spotlight images */
 wchar_t* spotlightDir = L"\\Packages\\Microsoft.Windows.ContentDeliveryManager_cw5n1h2txyewy\\LocalState\\Assets\\";
-wchar_t* PicturesDir = L"\\Pictures\\Wins10";
+wchar_t* PicturesDir = L"\\Pictures\\Wins10\\";
+
+wchar_t* srcDir = getProfile("LOCALAPPDATA");
+wchar_t* destDir = getProfile("USERPROFILE");
 size_t addressBufferSize = 1024;
 
 wchar_t* getProfile(const char *env)
@@ -32,13 +35,13 @@ wchar_t* getProfile(const char *env)
 	return userProfile;
 }
 
-void readFiles()
+
+std::vector<std::wstring> readFiles()
 {
-	wchar_t* srcDir = getProfile("LOCALAPPDATA");
+
 	wcscat_s(srcDir, addressBufferSize, spotlightDir);				// Get path of Windows Spotlight Images
 	//wcout << srcDir << endl;
 
-	wchar_t* destDir = getProfile("USERPROFILE");								// Get Path of User Pictures Folder
 	wcscat_s(destDir, addressBufferSize, PicturesDir);				// Get path of Windows Spotlight Images
 	//wcout << destDir << endl;
 
@@ -60,13 +63,49 @@ void readFiles()
 		} while (FindNextFile(hFind, &findFileData));
 		FindClose(hFind);
 	}
-	
-	//Create a new Directory to store in case the destination directory was not given
+	return filenames;
+}
+
+
+void copyFiles(std::vector<std::wstring> filenames) 
+{
+	//Create a new Directory to copy pictures to in case the destination directory was not created
 	if (CreateDirectory(destDir, NULL))
 	{
 		std::wcout << "Output Directory: " << destDir << std::endl;
 		std::cout << "Directory created successfully." << std::endl;
 	}
-		
 
+	//Get current local time to rename copied files
+	time_t now = time(0);
+	tm ltm;
+	localtime_s(&ltm,&now);
+	std::string dd = std::to_string(ltm.tm_mday);
+	std::string mm = std::to_string(1 + ltm.tm_mon);
+	std::string yyyy = std::to_string(1900 + ltm.tm_year);
+
+	int i = 0;
+	for (auto item : filenames)
+	{
+		std::string str;
+		std::wstring widestr;
+		wchar_t newfile[1024] = L"";
+		wchar_t srcname[1024] = L"";
+		str.append(dd).append(mm).append(yyyy).append(std::to_string(i)).append(".jpeg");
+		widestr = std::wstring(str.begin(), str.end());
+		wcscat_s(srcname, addressBufferSize ,srcDir);
+		wcscat_s(srcname, addressBufferSize ,item.c_str());
+		wcscat_s(newfile, addressBufferSize,destDir);
+		wcscat_s(newfile, addressBufferSize, widestr.c_str());
+
+		//std::wcout << newfile << std::endl;
+		
+		bool b = CopyFile(srcname, newfile, FALSE);
+
+
+		if (!b)
+			std::wcout << "Error: " << GetLastError() << "for " << item << std::endl;
+		i++;
+		
+	}
 }

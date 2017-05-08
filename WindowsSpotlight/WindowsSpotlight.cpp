@@ -8,8 +8,14 @@
 
 int main()
 {
-	readFiles();
+	std::vector<std::wstring> filenames;
+	
+	filenames = readFiles();
+
+	copyFiles(filenames);
+
 	system("pause");
+
 	return 0;		
 }
 
