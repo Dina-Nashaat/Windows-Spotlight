@@ -6,6 +6,8 @@
 #include <iostream>
 #include <vector>
 
+#define desiredWidth 1920
+#define desiredHeight 1080
 
 
 wchar_t* getProfile(const char *env);

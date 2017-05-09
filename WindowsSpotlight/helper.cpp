@@ -3,6 +3,11 @@
 
 #include "stdafx.h"
 #include "helper.h"
+#include <windows.h>
+#include <objidl.h>
+#include <gdiplus.h>
+using namespace Gdiplus;
+#pragma comment (lib,"Gdiplus.lib")
 
 
 /* Returns the source directory of windows spotlight images */
@@ -84,6 +89,8 @@ void copyFiles(std::vector<std::wstring> filenames)
 	std::string mm = std::to_string(1 + ltm.tm_mon);
 	std::string yyyy = std::to_string(1900 + ltm.tm_year);
 
+	FILE *stream;
+
 	int i = 0;
 	for (auto item : filenames)
 	{
@@ -91,21 +98,35 @@ void copyFiles(std::vector<std::wstring> filenames)
 		std::wstring widestr;
 		wchar_t newfile[1024] = L"";
 		wchar_t srcname[1024] = L"";
-		str.append(dd).append(mm).append(yyyy).append(std::to_string(i)).append(".jpeg");
+		str.append(dd).append(mm).append(yyyy).append(std::to_string(i)).append(".jpg");
 		widestr = std::wstring(str.begin(), str.end());
-		wcscat_s(srcname, addressBufferSize ,srcDir);
-		wcscat_s(srcname, addressBufferSize ,item.c_str());
-		wcscat_s(newfile, addressBufferSize,destDir);
+
+		wcscat_s(srcname, addressBufferSize, srcDir);
+		wcscat_s(srcname, addressBufferSize, item.c_str());
+
+		wcscat_s(newfile, addressBufferSize, destDir);
 		wcscat_s(newfile, addressBufferSize, widestr.c_str());
 
-		//std::wcout << newfile << std::endl;
+
+		// Filter images copied to destination by Dimensions (1920 x 1080)
+		GdiplusStartupInput gdiplusStartupInput;
+		ULONG_PTR gdiplusToken;
+		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+
+		Image* image = new Image(srcname);
+		UINT imageHeight = image->GetHeight();
+		UINT imageWidth = image->GetWidth();
 		
-		bool b = CopyFile(srcname, newfile, FALSE);
+		delete image;
+		GdiplusShutdown(gdiplusToken);
 
-
-		if (!b)
-			std::wcout << "Error: " << GetLastError() << "for " << item << std::endl;
+		if (imageHeight == desiredHeight && imageWidth == desiredWidth)
+		{
+			bool b = CopyFile(srcname, newfile, FALSE);
+			if (!b)
+				std::wcout << "Error: " << GetLastError() << "for " << item << std::endl;
+		}
 		i++;
-		
 	}
+	std::wcout << "Images Successfully copied to destination output: " << destDir << std::endl;
 }
