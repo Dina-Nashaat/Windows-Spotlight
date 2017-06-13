@@ -10,6 +10,7 @@ int main()
 {
 	
 	copyFiles();
+
 	system("pause");
 
 	return 0;		
